@@ -3,6 +3,10 @@ from flask_cors import CORS
 
 import asyncio
 import scrython
+import sqlalchemy
+
+from services.puzzle_service import get_or_create_daily_puzzle
+from db import SessionLocal
 
 app = Flask(__name__)
 # Set a secret key for session management (important for games)
@@ -83,40 +87,24 @@ def card_names(prefix: str):
             "Counterspell",
         ])
 
-@app.route('/api/categories/<int:game_seed>', methods=['GET'])
-def getCategories(game_seed: int):
-    return [
-        {
-            "summary": "Mana Value 5",
-            "description": "This card has a mana value of 5.",
-            "filter": "mv=5"
-        },
-        {
-            "summary": "Phyrexian Mana",
-            "description": "This card contains phyrexian mana symbols in its mana cost or rules text.",
-            "filter": "is:phyrexian"
-        },
-        {
-            "summary": "Merfolk",
-            "description": "This card is has the Merfolk creature type.",
-            "filter": "t:merfolk"
-        },
-        {
-            "summary": "Sorcery",
-            "description": "This card is has the sorcery type.",
-            "filter": "t:sorcery"
-        },
-        {
-            "summary": "Deathtouch",
-            "description": "This card has deathtouch.",
-            "filter": "kw:deathtouch"
-        },
-        {
-            "summary": "Hybrid Mana",
-            "description": "This card contains hybrid mana symbols in its mana cost or rules text.",
-            "filter": "is:hybrid"
-        }
-    ]
+@app.route("/api/categories/<int:game_seed>")
+def get_categories(game_seed: int):
+    session = SessionLocal()
+
+    try:
+        puzzle = get_or_create_daily_puzzle(session, game_seed)
+
+        return [
+            {
+                "summary": link.category.summary,
+                "description": link.category.description,
+                "filter": link.category.filter,
+            }
+            for link in puzzle.categories
+        ]
+
+    finally:
+        session.close()
 
 if __name__ == '__main__':
     # Run the app in debug mode for development
