@@ -70,7 +70,7 @@ def is_solvable_cell(
             order="name",
         )
 
-        return cards.total_cards > 0
+        return cards.total_cards >= 8
 
     except Exception as e:
         print(f"Scryfall error for query '{query}': {e}")
